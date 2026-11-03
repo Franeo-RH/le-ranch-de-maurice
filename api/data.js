@@ -6,6 +6,6 @@ export default async function handler(req, res) {
   try {
     res.status(200).json(await readData());
   } catch {
-    res.status(200).json({ posts: [], hidden: [], produits: null });
+    res.status(200).json({ posts: [], hidden: [], produits: null, edits: {} });
   }
 }

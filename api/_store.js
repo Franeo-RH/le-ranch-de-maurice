@@ -1,7 +1,7 @@
 import { put, list, del } from '@vercel/blob';
 
 const PREFIX = 'site/data-';
-const empty = () => ({ posts: [], hidden: [], produits: null });
+const empty = () => ({ posts: [], hidden: [], produits: null, edits: {} });
 
 async function versions() {
   const { blobs } = await list({ prefix: PREFIX, limit: 100 });
@@ -18,6 +18,7 @@ export async function readData() {
     posts: Array.isArray(d.posts) ? d.posts : [],
     hidden: Array.isArray(d.hidden) ? d.hidden : [],
     produits: d.produits || null,
+    edits: d.edits && typeof d.edits === 'object' ? d.edits : {},
   };
 }
 

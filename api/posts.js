@@ -30,6 +30,24 @@ export default async function handler(req, res) {
       await writeData(d);
       return res.status(200).json({ post });
     }
+    if (req.method === 'PUT') {
+      const id = clean(req.query && req.query.id, 80);
+      const b = req.body || {};
+      const ig = clean(b.instagram, 300);
+      const f = {
+        title: clean(b.title, 120),
+        text: clean(b.text, 2000),
+        date: /^\d{4}-\d{2}-\d{2}$/.test(b.date || '') ? b.date : today(),
+        instagram: /^https:\/\/(www\.)?instagram\.com\/\S+$/i.test(ig) ? ig : '',
+      };
+      if (!id) return res.status(400).json({ error: 'Publication introuvable.' });
+      const d = await readData();
+      const own = d.posts.find((p) => p.id === id);
+      if (own) Object.assign(own, f);
+      else d.edits[id] = f;
+      await writeData(d);
+      return res.status(200).json({ ok: true, posts: d.posts, edits: d.edits });
+    }
     if (req.method === 'DELETE') {
       const id = clean(req.query && req.query.id, 80);
       if (!id) return res.status(400).json({ error: 'Publication introuvable.' });
