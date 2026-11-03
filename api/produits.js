@@ -1,5 +1,6 @@
 import { requireAdmin } from './_auth.js';
 import { readData, writeData } from './_store.js';
+import { storeError } from './_store.js';
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return;
@@ -14,7 +15,6 @@ export default async function handler(req, res) {
     await writeData(d);
     res.status(200).json({ produits });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Erreur du serveur' });
+    storeError(res, e);
   }
 }

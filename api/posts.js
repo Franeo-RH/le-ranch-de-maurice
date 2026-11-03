@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { requireAdmin } from './_auth.js';
 import { readData, writeData, savePhoto, removePhoto } from './_store.js';
+import { storeError } from './_store.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const clean = (v, n) => String(v || '').trim().slice(0, n);
@@ -64,7 +65,6 @@ export default async function handler(req, res) {
     }
     res.status(405).json({ error: 'Méthode non autorisée' });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Erreur du serveur' });
+    storeError(res, e);
   }
 }

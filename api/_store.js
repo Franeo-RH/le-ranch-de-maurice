@@ -40,3 +40,15 @@ export async function savePhoto(id, buf, type) {
 export async function removePhoto(url) {
   if (typeof url === 'string' && url.startsWith('https://')) { try { await del(url); } catch {} }
 }
+
+export function storeError(res, e) {
+  console.error(e);
+  const msg = String((e && e.message) || e).slice(0, 200);
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return res.status(503).json({ error: "Le stockage des photos n'est pas activé : dans Vercel, Storage → Blob → Connect au projet, puis Redeploy." });
+  }
+  if (/private/i.test(msg)) {
+    return res.status(503).json({ error: "Le stockage Blob est en mode privé : recréez-le en mode Public dans Vercel (Storage → Blob), puis Redeploy." });
+  }
+  return res.status(503).json({ error: 'Erreur du stockage Vercel : ' + msg });
+}

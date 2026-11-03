@@ -872,7 +872,7 @@ img{display:block}
   });
   function webErr(err,fallback){
     if(err&&err.status===401){ admin.on=false; admin.open=true; admin.msg='Votre session a expiré. Reconnectez-vous.'; admin.msgKind='warn'; renderSite(); return; }
-    admin.msg=(err&&err.status&&err.status<500&&err.message)?err.message:fallback; admin.msgKind='warn';
+    admin.msg=(err&&err.status&&(err.status<500||err.status===503)&&err.message&&!/^Erreur \d+$/.test(err.message))?err.message:fallback; admin.msgKind='warn';
   }
   function loadWeb(fresh){
     return fetch('/api/data'+(fresh?'?fresh=1':''),{credentials:'same-origin',cache:fresh?'no-store':'default'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
