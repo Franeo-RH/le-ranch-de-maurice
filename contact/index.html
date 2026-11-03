@@ -228,6 +228,7 @@ img{display:block}
 @media (max-width:640px){ .socials{grid-template-columns:minmax(0,1fr)} }
 .social-embed{margin-bottom:28px; display:flex; justify-content:center}
 .social-embed > *{width:100%}
+.embed-wait{min-height:120px; display:grid; place-items:center; color:var(--muted); font-size:14px}
 .embed-off{border:1.5px dashed var(--line); border-radius:var(--radius); padding:20px 22px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px}
 .embed-off p{max-width:52ch; color:var(--muted); font-size:15px}
 .embed-off b{color:var(--ink)}
@@ -534,7 +535,7 @@ img{display:block}
       '<div class="socials"><div class="insta"><div>'+ICON.insta+'<span><b>Instagram</b>@leranchdemaurice</span></div><a class="btn" href="'+SOCIAL.ig+'" target="_blank" rel="noopener">Suivre</a></div>'+
         '<div class="insta"><div>'+ICON.tiktok+'<span><b>TikTok</b>@leranchdemaurice</span></div><a class="btn" href="'+SOCIAL.tt+'" target="_blank" rel="noopener">Suivre</a></div></div>'+
       (WEB?'<div id="social-embed" class="social-embed"></div>':'')+
-      grid+'</div></div></section>';
+      '<div id="blog-grid">'+grid+'</div></div></div></section>';
   }
 
   var FAQ=[
@@ -610,8 +611,18 @@ img{display:block}
   }
 
   var RENDER={accueil:function(){return accueil();},prestations:function(){return prestations();},legumes:function(){return legumes();},blog:function(){return blog();},contact:function(){return contact();},legal:function(){return legal();}};
+  var lastView=null;
   function renderSite(){
     var app=document.getElementById('app');
+    var box=document.getElementById('social-embed');
+    if(view==='blog'&&lastView==='blog'&&box&&box.getAttribute('data-loaded')==='1'){
+      // Mise à jour partielle : on ne recharge pas les vidéos TikTok déjà affichées
+      var tmp=document.createElement('div'); tmp.innerHTML=blog();
+      var g=document.getElementById('blog-grid'), ng=tmp.querySelector('#blog-grid'); if(g&&ng) g.innerHTML=ng.innerHTML;
+      var f=app.querySelector('footer'); tmp.innerHTML=footer(); if(f&&tmp.firstElementChild) f.replaceWith(tmp.firstElementChild);
+      renderConsent(); return;
+    }
+    lastView=view;
     app.innerHTML=nav()+'<main id="contenu">'+RENDER[view]()+'</main>'+footer();
     var cur=document.querySelector('.tab[aria-current]'); if(cur&&cur.scrollIntoView&&cur.parentNode.scrollWidth>cur.parentNode.clientWidth) try{cur.parentNode.scrollLeft=cur.offsetLeft-16;}catch(e){}
     renderSocial(); renderConsent();
@@ -857,13 +868,25 @@ img{display:block}
       '<a class="consent-more" href="'+href('legal')+'#cookies" data-go="legal" data-anchor="cookies">Politique de cookies</a>'+
     '</div></div>';
   }
-  var ttLoaded=false;
+  var ttObserver=null;
+  function loadTikTok(box){
+    if(!box||box.getAttribute('data-loaded')==='1'||!document.body.contains(box)) return;
+    box.setAttribute('data-loaded','1');
+    box.innerHTML='<blockquote class="tiktok-embed" cite="'+SOCIAL.tt+'" data-unique-id="leranchdemaurice" data-embed-type="creator" style="max-width:780px;min-width:288px;"><section><a target="_blank" rel="noopener" href="'+SOCIAL.tt+'?refer=creator_embed">@leranchdemaurice</a></section></blockquote>';
+    var sc=document.createElement('script'); sc.async=true; sc.src='https://www.tiktok.com/embed.js'; box.appendChild(sc);
+  }
   function renderSocial(){
     var box=document.getElementById('social-embed'); if(!box) return;
     var c=getConsent();
     if(c&&c.social){
-      box.innerHTML='<blockquote class="tiktok-embed" cite="'+SOCIAL.tt+'" data-unique-id="leranchdemaurice" data-embed-type="creator" style="max-width:780px;min-width:288px;"><section><a target="_blank" rel="noopener" href="'+SOCIAL.tt+'?refer=creator_embed">@leranchdemaurice</a></section></blockquote>';
-      var sc=document.createElement('script'); sc.async=true; sc.src='https://www.tiktok.com/embed.js'+(ttLoaded?'?r='+Date.now():''); ttLoaded=true; box.appendChild(sc);
+      if(box.getAttribute('data-loaded')==='1') return;
+      // Chargé une seule fois, et seulement quand le bloc arrive à l'écran
+      box.innerHTML='<div class="embed-wait">Chargement des vidéos TikTok…</div>';
+      if(ttObserver) ttObserver.disconnect();
+      if('IntersectionObserver' in window){
+        ttObserver=new IntersectionObserver(function(en){ if(en.some(function(x){return x.isIntersecting;})){ ttObserver.disconnect(); loadTikTok(box); } },{rootMargin:'200px'});
+        ttObserver.observe(box);
+      } else loadTikTok(box);
     } else {
       box.innerHTML='<div class="embed-off"><p><b>Les vidéos TikTok de la ferme</b><br>Pour les voir ici, acceptez les cookies TikTok. Sinon, elles sont disponibles directement sur TikTok.</p>'+
         '<div class="cta-row" style="margin-top:0"><button class="btn btn-primary" type="button" data-consent="1">Afficher les vidéos</button><a class="btn btn-ghost" href="'+SOCIAL.tt+'" target="_blank" rel="noopener">Ouvrir TikTok</a></div></div>';
